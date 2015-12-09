@@ -47,12 +47,12 @@ namespace NoobFizz
             R = new Spell(SpellSlot.R, 1300);
 
             Menu = new Menu(Player.ChampionName, Player.ChampionName, true);
-            Menu orbwalkerMenu = Menu.AddSubMenu(new Menu("Orbwalker", "Orbwalker"));
+            var orbwalkerMenu = Menu.AddSubMenu(new Menu("Orbwalker", "Orbwalker"));
             Orbwalker = new Orbwalking.Orbwalker(orbwalkerMenu);
             //Combo Menu
             var combo = new Menu("Combo", "Combo");
             Menu.AddSubMenu(combo);
-            combo.AddItem(new MenuItem("ComboMode", "ComboMode").SetValue(new StringList(new[] { "R on Dash", "R After Dash" })));
+            combo.AddItem(new MenuItem("ComboMode", "ComboMode").SetValue(new StringList(new[] { "R after Dash", "R on Dash" })));
             combo.AddItem(new MenuItem("space", ""));
             combo.AddItem(new MenuItem("Combo", "Combo"));
             combo.AddItem(new MenuItem("useQ", "Use Q").SetValue(true));
@@ -76,6 +76,10 @@ namespace NoobFizz
             jungle.AddItem(new MenuItem("jungleclearW", "Use W to JungleClear").SetValue(true));
             jungle.AddItem(new MenuItem("jungleclearE", "Use E to JungleClear").SetValue(true));
 
+            var miscMenu = new Menu("Misc", "Misc");
+            Menu.AddSubMenu(miscMenu);           
+            miscMenu.AddItem(new MenuItem("Killsteal", "Killsteal with Q").SetValue(true));
+
             hydra = new Items.Item(3074, 185);
             tiamat = new Items.Item(3077, 185);
             cutlass = new Items.Item(3144, 450);
@@ -89,88 +93,42 @@ namespace NoobFizz
         }
         private static void OnUpdate(EventArgs args)
         {
-            var useQ = (Menu.Item("useQ").GetValue<bool>());
-            var useW = (Menu.Item("useW").GetValue<bool>());
-            var useE = (Menu.Item("useE").GetValue<bool>());
-            var useR = (Menu.Item("useR").GetValue<bool>());
-            var ondash = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 0);
-            var afterdash = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 1);
-            var m = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
-            //Q Ks
-            if (m.Health < Q.GetDamage(m))
+            if (Menu.Item("Killsteal").GetValue<bool>())
             {
-                Q.Cast(m);
+                Killsteal();
             }
-            //Combo
-            if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Combo)
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
-                return;
+                Combo();
             }
-            if (Player.Distance(m) <= botrk.Range)
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
             {
-                botrk.Cast(m);
+                Lane();
+                Jungle();
             }
-            if (Player.Distance(m) <= cutlass.Range)
-            {
-                cutlass.Cast(m);
-            }
-            if (Player.Distance(m) <= hextech.Range)
-            {
-                hextech.Cast(m);
-            }
-            if (ondash)
-            {
-                if (useW && Q.IsReady()) W.Cast();
-                if (useQ) if (Player.Distance(m.Position) > 125) Q.Cast(m);
-                if (useR)
-                    UseR(m);
-                if (hydra.IsOwned() && Player.Distance(m) < hydra.Range && hydra.IsReady() && !E.IsReady()) hydra.Cast();
-                if (tiamat.IsOwned() && Player.Distance(m) < tiamat.Range && tiamat.IsReady() && !E.IsReady()) tiamat.Cast();
-            }
-            if (!afterdash)
-            {
-                return;
-            }
-            {
-                if (useW && Q.IsReady()) W.Cast();
-                if (useQ) if (Player.Distance(m.Position) > 125) Q.Cast(m);
-                if (useE && !R.IsReady()) E.Cast(Game.CursorPos);
-                if (hydra.IsOwned() && Player.Distance(m) < hydra.Range && hydra.IsReady() && !E.IsReady()) hydra.Cast();
-                if (tiamat.IsOwned() && Player.Distance(m) < tiamat.Range && tiamat.IsReady() && !E.IsReady()) tiamat.Cast();
-            }
-            if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear)
-            {
-                return;
-            }
-            Lane();
-            Jungle();
         }
         private static void AfterAa(AttackableUnit unit, AttackableUnit target)
         {
             var useE = (Menu.Item("useE").GetValue<bool>());
             var useR = (Menu.Item("useR").GetValue<bool>());
-            var ondash = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 0);
-            var afterdash = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 1);
+            var ondash = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 1);
+            var afterdash = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 0);
             var m = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
 
-            if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Combo)
-            {
-                return;
-            }
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
                 if (ondash)
                 {
                     if (useE && E.IsReady() && !R.IsReady()) E.Cast(Game.CursorPos);
                 }
-                if (!afterdash)
+                if (afterdash)
                 {
-                    return;
+                    if (useR && R.IsReady()) UseTr(m);
                 }
-                if (useR && R.IsReady()) UseR(m);
             }
         }
         //R usage
-        public static void UseR(Obj_AI_Hero target)
+        public static void UseTr(Obj_AI_Hero target)
         {
             var castPosition = R.GetPrediction(target).CastPosition;
             castPosition = Player.ServerPosition.Extend(castPosition, R.Range);
@@ -178,70 +136,121 @@ namespace NoobFizz
             R.Cast(castPosition);
         }
         //Lane&JungleClear
-        public static void Lane()
+        private static void Lane()
         {
-            var useQ = (Menu.Item("laneclearQ").GetValue<bool>());
-            var useW = (Menu.Item("laneclearW").GetValue<bool>());
-            var useE = (Menu.Item("laneclearE").GetValue<bool>());
-            var allMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, 550);
-            if (useQ && Q.IsReady())
-            {
-                foreach (var minion in allMinions.Where(minion => minion.IsValidTarget()))
-                {
-                    Q.CastOnUnit(minion);
-                }
-            }
-            if (useW && Q.IsReady() && W.IsReady())
-            {
-                foreach (var minion in allMinions.Where(minion => minion.IsValidTarget()))
-                {
-                    W.Cast(minion);
-                }
-            }
-
-            /*if (Menu.Item("useE").GetValue<bool>() && R.IsReady())
+            var allMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, Q.Range);
+            if (Menu.Item("laneclearW").GetValue<bool>() && Q.IsReady() && W.IsReady())
             {
                 foreach (var minion in allMinions)
                 {
                     if (minion.IsValidTarget())
                     {
-                        E.Cast(minion);
+                        W.Cast();
                     }
                 }
-            }*/
+            }
+            if (Menu.Item("laneclearQ").GetValue<bool>() && Q.IsReady())
+            {
+                foreach (var minion in allMinions)
+                {
+                    if (minion.IsValidTarget())
+                    {
+                        Q.CastOnUnit(minion);
+                    }
+                }
+            }
+            if (Menu.Item("laneclearE").GetValue<bool>() && E.IsReady())
+            {
+                foreach (var minion in allMinions)
+                {
+                    if (minion.IsValidTarget())
+                    {
+                        E.Cast(Game.CursorPos);
+                    }
+                }
+            }
         }
-
-        public static void Jungle()
+        private static void Jungle()
         {
-            var useQ = (Menu.Item("jungleclearQ").GetValue<bool>());
-            var useW = (Menu.Item("jungleclearW").GetValue<bool>());
-            var useE = (Menu.Item("jungleclearE").GetValue<bool>());
-            var allMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, 550, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
-            if (useQ && Q.IsReady())
-            {
-                foreach (var minion in allMinions.Where(minion => minion.IsValidTarget()))
-                {
-                    Q.CastOnUnit(minion);
-                }
-            }
-
-            if (useW && W.IsReady() && Q.IsReady())
-            {
-                foreach (var minion in allMinions.Where(minion => minion.IsValidTarget()))
-                {
-                    W.Cast(minion);
-                }
-            }
-            /*if (useQ && E.IsReady())
+            var allMinions = MinionManager.GetMinions(
+                ObjectManager.Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+            if (Menu.Item("jungleclearW").GetValue<bool>() && W.IsReady() && Q.IsReady())
             {
                 foreach (var minion in allMinions)
                 {
                     if (minion.IsValidTarget())
                     {
-                        E.Cast(minion);
+                        W.Cast();
                     }
                 }
-            }*/
+            }
+            if (Menu.Item("jungleclearQ").GetValue<bool>() && Q.IsReady())
+            {
+                foreach (var minion in allMinions)
+                {
+                    if (minion.IsValidTarget())
+                    {
+                        Q.CastOnUnit(minion);
+                    }
+                }
+            }
+            if (Menu.Item("jungleclearE").GetValue<bool>() && E.IsReady())
+            {
+                foreach (var minion in allMinions)
+                {
+                    if (minion.IsValidTarget())
+                    {
+                        E.Cast(Game.CursorPos);
+                    }
+                }
+            }
+        }
+        private static void Combo()
+        {
+            var useQ = (Menu.Item("useQ").GetValue<bool>());
+            var useW = (Menu.Item("useW").GetValue<bool>());
+            var useE = (Menu.Item("useE").GetValue<bool>());
+            var useR = (Menu.Item("useR").GetValue<bool>());
+            var ondash = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 1);
+            var afterdash = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 0);
+            var m = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
+            if (m != null && Player.Distance(m) <= botrk.Range)
+            {
+                botrk.Cast(m);
+            }
+            if (m != null && Player.Distance(m) <= cutlass.Range)
+            {
+                cutlass.Cast(m);
+            }
+            if (m != null && Player.Distance(m) <= hextech.Range)
+            {
+                hextech.Cast(m);
+            }
+            if (ondash)
+            {
+                if (useW && Q.IsReady()) if (Player.Distance(m.Position) < Q.Range) W.Cast();
+                if (useQ) if (Player.Distance(m.Position) > 175) Q.CastOnBestTarget();
+                if (useR)
+                    UseTr(m);
+                if (hydra.IsOwned() && Player.Distance(m) < hydra.Range && hydra.IsReady() && !E.IsReady()) hydra.Cast();
+                if (tiamat.IsOwned() && Player.Distance(m) < tiamat.Range && tiamat.IsReady() && !E.IsReady()) tiamat.Cast();
+            }
+            if (afterdash)
+            {
+                if (useW && Q.IsReady()) if (Player.Distance(m.Position) < Q.Range) W.Cast();
+                if (useQ) if (Player.Distance(m.Position) > 175) Q.CastOnBestTarget();
+                if (useE && !R.IsReady()) E.Cast(Game.CursorPos);
+                if (hydra.IsOwned() && Player.Distance(m) < hydra.Range && hydra.IsReady() && !E.IsReady()) hydra.Cast();
+                if (tiamat.IsOwned() && Player.Distance(m) < tiamat.Range && tiamat.IsReady() && !E.IsReady()) tiamat.Cast();
+            }
+        }
+        private static void Killsteal()
+        {
+            var m = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
+            if (m != null && m.Health < Q.GetDamage(m) && Q.IsReady())
+            {
+                Q.Cast(m);
+            }
         }
     }
 }
