@@ -117,7 +117,11 @@ namespace NoobJax
                 {
                     if (E.IsReady())
                     {
-                        if (E.IsReady() && Q.IsReady() && y.IsValidTarget(Q.Range))
+                        if (E.IsReady() && Q.IsReady() && y.IsValidTarget(Q.Range) || (E.IsReady() && Player.Distance(y.Position) < 160))
+                        {
+                            E.Cast();
+                        }
+                        if (E.IsReady() && Player.Distance(y.Position) > 125)
                         {
                             E.Cast();
                         }
