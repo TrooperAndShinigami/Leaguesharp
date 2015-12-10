@@ -28,16 +28,11 @@ namespace NoobJax
         private static Items.Item cutlass;
         private static Items.Item botrk;
         private static Items.Item hextech;
-        private static Obj_AI_Base Target;
 
-        private static bool IsEUsed
-        {
-            get { return Player.HasBuff("JaxCounterStrike"); }
-        }
-        private static bool IsWUsed
-        {
-            get { return Player.HasBuff("JaxEmpowerTwo"); }
-        }
+        private static bool IsEUsed => Player.HasBuff("JaxCounterStrike");
+
+        private static bool IsWUsed => Player.HasBuff("JaxEmpowerTwo");
+
         private static void Main(string[] args)
         {
             CustomEvents.Game.OnGameLoad += Game_OnGameLoad;
@@ -112,11 +107,6 @@ namespace NoobJax
             {
                 Combo();
             }
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
-            {
-                Jungle();
-                Lane();
-            }
         }
         private static void OnAa(AttackableUnit unit, AttackableUnit target)
         {
@@ -158,12 +148,71 @@ namespace NoobJax
         }
         private static void AfterAa(AttackableUnit unit, AttackableUnit target)
         {
+            var allJungleMinions = MinionManager.GetMinions(
+                ObjectManager.Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+            var allLaneMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, Q.Range);
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
                 if (Menu.Item("useW").GetValue<bool>())
                     W.Cast();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
             {
                 if (Menu.Item("harassW").GetValue<bool>() && W.IsReady()) W.Cast();
+            }
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+            {
+                //Jungle 
+                if (Menu.Item("JungleClearE").GetValue<bool>() && E.IsReady() && !IsEUsed)
+                {
+                    foreach (var minion in allJungleMinions)
+                    {
+                        if (minion.IsValidTarget())
+                        {
+                            E.Cast(minion);
+                        }
+                    }
+                }
+                if (Menu.Item("JungleClearQ").GetValue<bool>() && Q.IsReady())
+                {
+                    foreach (var minion in allJungleMinions)
+                    {
+                        if (minion.IsValidTarget())
+                        {
+                            Q.CastOnUnit(minion);
+                        }
+                    }
+                }
+                if (Menu.Item("JungleClearW").GetValue<bool>() && W.IsReady())
+                {
+                    foreach (var minion in allJungleMinions)
+                    {
+                        if (minion.IsValidTarget())
+                        {
+                            W.Cast(minion);
+                        }
+                    }
+                }
+                //Lane
+                if (Menu.Item("laneclearQ").GetValue<bool>() && Q.IsReady())
+                {
+                    foreach (var minion in allLaneMinions)
+                    {
+                        if (minion.IsValidTarget())
+                        {
+                            Q.CastOnUnit(minion);
+                        }
+                    }
+                }
+                if (Menu.Item("laneclearW").GetValue<bool>() && W.IsReady())
+                {
+                    foreach (var minion in allLaneMinions)
+                    {
+                        if (minion.IsValidTarget())
+                        {
+                            W.Cast(minion);
+                        }
+                    }
+                }
+
             }
         }
         public static void WardJump()
@@ -240,69 +289,9 @@ namespace NoobJax
             {
                 hextech.Cast(m);
             }
-            if (Menu.Item("useQ").GetValue<bool>()) if (Player.Distance(m.Position) > 125) Q.CastOnBestTarget();
+            if (Menu.Item("useQ").GetValue<bool>()) if (m != null && Player.Distance(m.Position) > 125) Q.CastOnBestTarget();
 
             if (Menu.Item("useR").GetValue<bool>()) R.Cast(m);
-        }
-        //Lane&JungleClear
-        private static void Lane()
-        {
-            var allMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, Q.Range);
-            if (Menu.Item("laneclearQ").GetValue<bool>() && Q.IsReady())
-            {
-                foreach (var minion in allMinions)
-                {
-                    if (minion.IsValidTarget())
-                    {
-                        Q.CastOnUnit(minion);
-                    }
-                }
-            }
-            if (Menu.Item("laneclearW").GetValue<bool>() && W.IsReady())
-            {
-                foreach (var minion in allMinions)
-                {
-                    if (minion.IsValidTarget() && Player.Distance(minion.Position) < 140)
-                    {
-                        W.Cast();
-                    }
-                }
-            }
-        }
-        private static void Jungle()
-        {
-            var allMinions = MinionManager.GetMinions(
-                ObjectManager.Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
-            if (Menu.Item("JungleClearE").GetValue<bool>() && E.IsReady() && Q.IsReady())
-            {
-                foreach (var minion in allMinions)
-                {
-                    if (minion.IsValidTarget())
-                    {
-                        E.Cast();
-                    }
-                }
-            }
-            if (Menu.Item("JungleClearQ").GetValue<bool>() && Q.IsReady())
-            {
-                foreach (var minion in allMinions)
-                {
-                    if (minion.IsValidTarget())
-                    {
-                        Q.CastOnUnit(minion);
-                    }
-                }
-            }
-            if (Menu.Item("JungleClearW").GetValue<bool>() && W.IsReady())
-            {
-                foreach (var minion in allMinions)
-                {
-                    if (minion.IsValidTarget() && Player.Distance(minion.Position) < 140)
-                    {
-                        W.Cast();
-                    }
-                }
-            }
-        }
+        }        
     }
 }
