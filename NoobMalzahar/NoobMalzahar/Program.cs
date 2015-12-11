@@ -97,7 +97,7 @@ namespace NoobMalzahar
             {
                 Lane();
             }
-            //Harass
+            //AutoHarass
             AutoHarass();
         }
         private static void AutoHarass()
@@ -129,7 +129,7 @@ namespace NoobMalzahar
             if (useW && W.IsReady()) W.Cast(m);           
             if (useR && R.IsReady() && m != null && m.Health < R.GetDamage(m)) R.CastOnUnit(m);
         }
-        //T logic
+        //Burst
         public static void Oneshot()
         {
             if (HasRBuff())
