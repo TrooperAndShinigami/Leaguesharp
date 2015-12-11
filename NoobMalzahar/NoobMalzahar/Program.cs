@@ -53,30 +53,22 @@ namespace NoobMalzahar
             //Harass Menu
             var harass = new Menu("Harass", "Harass");
             Menu.AddSubMenu(harass);
-            harass.AddItem(new MenuItem("harassE", "").SetValue(true));
+            harass.AddItem(new MenuItem("autoharass", "Auto Harrass with E").SetValue(false));
             //LaneClear Menu
             var lc = new Menu("Laneclear", "Laneclear");
             Menu.AddSubMenu(lc);
-            lc.AddItem(new MenuItem("laneclearQ", "Use Q to LaneClear").SetValue(true));
             lc.AddItem(new MenuItem("laneclearE", "Use E to LaneClear").SetValue(true));
-            //JungleClear Menu
-            var jungle = new Menu("JungleClear", "JungleClear");
-            Menu.AddSubMenu(jungle);
-            jungle.AddItem(new MenuItem("jungleclearQ", "Use Q to JungleClear").SetValue(true));
-            jungle.AddItem(new MenuItem("jungleclearW", "Use W to JungleClear").SetValue(true));
-            jungle.AddItem(new MenuItem("jungleclearE", "Use E to JungleClear").SetValue(true));
 
             var miscMenu = new Menu("Misc", "Misc");
             Menu.AddSubMenu(miscMenu);
             miscMenu.AddItem(new MenuItem("drawQ", "Draw Q range").SetValue(true));
-            miscMenu.AddItem(new MenuItem("oneshot", "Oneshot Combo").SetValue(new KeyBind("T".ToCharArray()[0], KeyBindType.Press)).SetTooltip("It will cast Q+E+R on enemy when enemy is in E range."));
+            miscMenu.AddItem(new MenuItem("oneshot", "Burst Combo").SetValue(new KeyBind("T".ToCharArray()[0], KeyBindType.Press)).SetTooltip("It will cast Q+E+R on enemy when enemy is in E range."));
             Menu.AddToMainMenu();
 
             Game.OnUpdate += OnUpdate;
             Drawing.OnDraw += OnDraw;
             Game.PrintChat("NoobMalzahar by 1Shinigamix3");
         }
-
         private static void OnDraw(EventArgs args)
         {
             if (Menu.Item("drawQ").GetValue<bool>())
@@ -90,18 +82,29 @@ namespace NoobMalzahar
         }
         private static void OnUpdate(EventArgs args)
         {
+            //Combo
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
                 Combo();
             }
+            //Burst
             if (Menu.Item("oneshot").GetValue<KeyBind>().Active)
             {
                 Oneshot();
             }
+            //Lane
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
             {
                 Lane();
             }
+            //Harass
+            AutoHarass();
+        }
+        private static void AutoHarass()
+        {
+            var m = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Magical);
+            if (Menu.Item("autoharass").GetValue<bool>())
+                    E.CastOnUnit(m);
         }
         static bool HasRBuff()
         {
