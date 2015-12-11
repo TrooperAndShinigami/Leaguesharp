@@ -7,7 +7,7 @@ using LeagueSharp;
 using LeagueSharp.Common;
 
 
-namespace NoobFizz
+namespace NoobMalzahar
 {
     class Program
     {
