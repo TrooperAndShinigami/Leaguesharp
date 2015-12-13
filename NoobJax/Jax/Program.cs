@@ -281,9 +281,8 @@ namespace NoobJax
             {
                 hextech.Cast(m);
             }
-            if (Menu.Item("useQ").GetValue<bool>()) if (m != null && Player.Distance(m.Position) > 125) Q.CastOnBestTarget();
-            if (Menu.Item("useE").GetValue<bool>())      
-                if (E.IsReady())
+            if (Menu.Item("useQ").GetValue<bool>()) if (m != null && Player.Distance(m.Position) > 125) Q.CastOnBestTarget();    
+                if (E.IsReady() && (Menu.Item("useE").GetValue<bool>()))
                 {
                     if ((!IsEUsed && Q.IsReady() && m.IsValidTarget(Q.Range)) || (!IsEUsed && m != null && Player.Distance(m.Position) < 200))
                     {
