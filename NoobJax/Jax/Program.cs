@@ -53,7 +53,7 @@ namespace NoobJax
 
             var spellMenu = Menu.AddSubMenu(new Menu("Combo", "Combo"));
             spellMenu.AddItem(new MenuItem("useQ", "Use Q").SetValue(true));
-            spellMenu.AddItem(new MenuItem("useW", "Use W").SetValue(true));           
+            spellMenu.AddItem(new MenuItem("useW", "Use W").SetValue(true));
             spellMenu.AddItem(new MenuItem("useR", "Use R").SetValue(true));
             spellMenu.AddItem(new MenuItem("usehydratiamat", "Use Tiamat/Hydra").SetValue(true));
             spellMenu.AddItem(new MenuItem("", "E options"));
@@ -103,65 +103,51 @@ namespace NoobJax
             {
                 WardJump();
             }
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
-            {
                 Combo();
-            }
         }
         private static void OnAa(AttackableUnit unit, AttackableUnit target)
         {
-            Obj_AI_Hero y = TargetSelector.GetTarget(700, TargetSelector.DamageType.Physical);
+            var y = TargetSelector.GetTarget(700, TargetSelector.DamageType.Physical);
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
-            {
-                if (Menu.Item("useE").GetValue<bool>())
+            {            
+                if (Menu.Item("usehydratiamat").GetValue<bool>())
                 {
-                    if (E.IsReady())
-                    {
-                        if (E.IsReady() && Q.IsReady() && y.IsValidTarget(Q.Range) || (E.IsReady() && Player.Distance(y.Position) < 160))
-                        {
-                            E.Cast();
-                        }
-                        if (E.IsReady() && Player.Distance(y.Position) > 125)
-                        {
-                            E.Cast();
-                        }
-                    }
+                    if (hydra.IsOwned() && Player.Distance(y) < hydra.Range && hydra.IsReady() && !W.IsReady()
+                        && !IsWUsed)
+                        hydra.Cast();
+                    if (tiamat.IsOwned() && Player.Distance(y) < tiamat.Range && tiamat.IsReady() && !W.IsReady()
+                        && !IsWUsed)
+                        tiamat.Cast();
                 }
-                if (Menu.Item("useE2").GetValue<bool>())
-                    {
-                        if (IsEUsed && y.IsValidTarget(Orbwalking.GetRealAutoAttackRange(null) + 65))
-                        {
-                            E.Cast();
-                        }
-                    }               
-                    if (Menu.Item("usehydratiamat").GetValue<bool>())
-                    {
-                            if (hydra.IsOwned() && Player.Distance(y) < hydra.Range && hydra.IsReady() && !W.IsReady()
-                                && !IsWUsed)
-                                hydra.Cast();
-                            if (tiamat.IsOwned() && Player.Distance(y) < tiamat.Range && tiamat.IsReady() && !W.IsReady()
-                                && !IsWUsed)
-                                tiamat.Cast();
-                    }               
             }
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
             {
-                if (hydra.IsOwned() && Player.Distance(target) < hydra.Range && hydra.IsReady() && !W.IsReady()) hydra.Cast();
-                if (tiamat.IsOwned() && Player.Distance(target) < tiamat.Range && tiamat.IsReady() && !W.IsReady()) tiamat.Cast();
+                if (hydra.IsOwned() && Player.Distance(y) < hydra.Range && hydra.IsReady() && !W.IsReady()
+                        && !IsWUsed)
+                    hydra.Cast();
+                if (tiamat.IsOwned() && Player.Distance(y) < tiamat.Range && tiamat.IsReady() && !W.IsReady()
+                        && !IsWUsed)
+                    tiamat.Cast();
             }
         }
         private static void AfterAa(AttackableUnit unit, AttackableUnit target)
-        {
+        {          
             var allJungleMinions = MinionManager.GetMinions(
                 ObjectManager.Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
             var allLaneMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, Q.Range);
+
+            //Combo AAreset
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
-                if (Menu.Item("useW").GetValue<bool>())
-                    W.Cast();
+            {
+                if (Menu.Item("useW").GetValue<bool>() && W.IsReady()) W.Cast();
+            }
+            //Harass AAreset
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
             {
                 if (Menu.Item("harassW").GetValue<bool>() && W.IsReady()) W.Cast();
             }
+
+            //Farm
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
             {
                 //Jungle 
@@ -280,6 +266,8 @@ namespace NoobJax
         }
         private static void Combo()
         {
+            if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Combo)
+                return;
             var m = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
             if (m != null && Player.Distance(m) <= botrk.Range)
             {
@@ -294,8 +282,22 @@ namespace NoobJax
                 hextech.Cast(m);
             }
             if (Menu.Item("useQ").GetValue<bool>()) if (m != null && Player.Distance(m.Position) > 125) Q.CastOnBestTarget();
-
+            if (Menu.Item("useE").GetValue<bool>())      
+                if (E.IsReady())
+                {
+                    if ((!IsEUsed && Q.IsReady() && m.IsValidTarget(Q.Range)) || (!IsEUsed && m != null && Player.Distance(m.Position) < 200))
+                    {
+                        E.Cast();
+                    }
+                    if (Menu.Item("useE2").GetValue<bool>())
+                    {
+                        if (IsEUsed && m != null && Player.Distance(m.Position) > 125)
+                        {
+                            E.Cast();
+                        }
+                    }
+                }           
             if (Menu.Item("useR").GetValue<bool>()) R.Cast(m);
-        }        
+        }
     }
 }
