@@ -31,7 +31,7 @@ namespace NoobDiana
         {
             if (Player.ChampionName != "Diana") return;
 
-            Q = new Spell(SpellSlot.Q, 850f, TargetSelector.DamageType.Magical);
+            Q = new Spell(SpellSlot.Q, 830f, TargetSelector.DamageType.Magical);
 
             Q.SetSkillshot(0.5f, 195f, 1600f, false, SkillshotType.SkillshotLine);
 
@@ -39,7 +39,7 @@ namespace NoobDiana
 
             E = new Spell(SpellSlot.E, 350f, TargetSelector.DamageType.Magical);
 
-            R = new Spell(SpellSlot.R, 820f, TargetSelector.DamageType.Magical);
+            R = new Spell(SpellSlot.R, 825f, TargetSelector.DamageType.Magical);
 
             Menu = new Menu(Player.ChampionName, Player.ChampionName, true);
             var orbwalkerMenu = Menu.AddSubMenu(new Menu("Orbwalker", "Orbwalker"));
@@ -64,17 +64,27 @@ namespace NoobDiana
 
             var harass = new Menu("Harass", "Harass");
             Menu.AddSubMenu(harass);
-            harass.AddItem(new MenuItem("harassW", "Use Q to Harass").SetValue(true));
+            harass.AddItem(new MenuItem("harassQ", "Use Q to Harass").SetValue(true));
 
             var miscMenu = new Menu("Misc", "Misc");
             Menu.AddSubMenu(miscMenu);
-            miscMenu.AddItem(new MenuItem("Killsteal", "Killsteal with Q").SetValue(true));
+            miscMenu.AddItem(new MenuItem("Killsteal", "Killsteal with Q and R").SetValue(true));
+            miscMenu.AddItem(new MenuItem("drawR", "Draw R range").SetValue(true));
 
             Menu.AddToMainMenu();
 
             Game.OnUpdate += OnUpdate;
+            Drawing.OnDraw += OnDraw;
             Game.PrintChat("NoobDiana by 1Shinigamix3");
         }
+        private static void OnDraw(EventArgs args)
+        {
+            if (Menu.Item("drawR").GetValue<bool>())
+            {
+                Render.Circle.DrawCircle(Player.Position, R.Range, System.Drawing.Color.Blue, 3);
+            }
+        }
+
         private static void OnUpdate(EventArgs args)
         {
             if (Player.IsDead || Player.IsRecalling())
@@ -86,11 +96,13 @@ namespace NoobDiana
                 Killsteal();
             }
             Combo();
+            Harass();
+            Farm();
         }
         private static void Killsteal()
         {
             var targetQ = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
-            var targetR = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
+            var targetR = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Magical);
             if (targetQ != null && targetQ.Health < Q.GetDamage(targetQ) && Q.IsReady())
             {
                 Q.Cast(targetQ);
@@ -100,15 +112,52 @@ namespace NoobDiana
                 R.Cast(targetR);
             }
         }
+        private static void Harass()
+        {
+            var target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
+            if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Mixed)
+                return;
+            if (Menu.Item("harassQ").GetValue<bool>() && Q.IsReady()) Q.Cast(target.ServerPosition);
+        }
         private static void Combo()
         {
             var target = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Magical);
             if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Combo)
                 return;
-            if (Menu.Item("useQ").GetValue<bool>()) Q.Cast(target.ServerPosition);
-            if (Menu.Item("useR").GetValue<bool>()) R.CastOnUnit(target);
-            if (Menu.Item("useE").GetValue<bool>() && E.IsInRange(target)) E.Cast();
-            if (Menu.Item("useW").GetValue<bool>() && W.IsInRange(target)) W.Cast();
+            
+            if (Menu.Item("useR").GetValue<bool>() && R.IsReady()) R.CastOnUnit(target);
+            if (Menu.Item("useQ").GetValue<bool>() && Q.IsReady() && Q.IsInRange(target)) Q.Cast(target.Position);                      
+            if (Menu.Item("useW").GetValue<bool>() && W.IsInRange(target) && W.IsReady()) W.Cast();
+            if (Menu.Item("useE").GetValue<bool>() && E.IsInRange(target) && E.IsReady()) E.Cast();
+        }
+        private static void Farm()
+        {
+            if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear)
+                return;
+            var allLaneMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, Q.Range);
+            var allJungleMinions = MinionManager.GetMinions(
+                            ObjectManager.Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+            //Lane
+            if (Menu.Item("laneclearQ").GetValue<bool>() && Q.IsReady())
+            {
+                foreach (var minion in allLaneMinions)
+                {
+                    if (minion.IsValidTarget())
+                    {
+                        Q.Cast(minion);
+                    }
+                }
+            }
+            if (Menu.Item("laneclearW").GetValue<bool>() && W.IsReady())
+            {
+                foreach (var minion in allLaneMinions)
+                {
+                    if (minion.IsValidTarget())
+                    {
+                        W.Cast(minion);
+                    }
+                }
+            }
         }
     }
 }
