@@ -50,6 +50,9 @@ namespace NoobDiana
             spellMenu.AddItem(new MenuItem("useW", "Use W").SetValue(true));
             spellMenu.AddItem(new MenuItem("useE", "Use E").SetValue(true));
             spellMenu.AddItem(new MenuItem("useR", "Use R").SetValue(true));
+            spellMenu.AddItem(new MenuItem("useR2", "Use second R").SetValue(true));
+            spellMenu.AddItem(new MenuItem("space", ""));
+            spellMenu.AddItem(new MenuItem("ComboMode", "ComboMode").SetValue(new StringList(new[] { "Normal", "Misaya" })));
 
             var lc = new Menu("Laneclear", "Laneclear");
             Menu.AddSubMenu(lc);
@@ -68,7 +71,8 @@ namespace NoobDiana
 
             var miscMenu = new Menu("Misc", "Misc");
             Menu.AddSubMenu(miscMenu);
-            miscMenu.AddItem(new MenuItem("Killsteal", "Killsteal with Q and R").SetValue(true));
+            miscMenu.AddItem(new MenuItem("KillstealQ", "Killsteal with Q").SetValue(true));
+            miscMenu.AddItem(new MenuItem("KillstealR", "Killsteal with R").SetValue(true));
             miscMenu.AddItem(new MenuItem("drawR", "Draw R range").SetValue(true));
 
             Menu.AddToMainMenu();
@@ -90,11 +94,8 @@ namespace NoobDiana
             if (Player.IsDead || Player.IsRecalling())
             {
                 return;
-            }
-            if (Menu.Item("Killsteal").GetValue<bool>())
-            {
-                Killsteal();
-            }
+            }         
+            Killsteal();
             Combo();
             Harass();
             Farm();
@@ -103,13 +104,13 @@ namespace NoobDiana
         {
             var targetQ = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
             var targetR = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Magical);
-            if (targetQ != null && targetQ.Health < Q.GetDamage(targetQ) && Q.IsReady())
+            if (Menu.Item("KillstealQ").GetValue<bool>() && targetQ != null && targetQ.Health < Q.GetDamage(targetQ) && Q.IsReady())
             {
-                Q.Cast(targetQ);
+                    Q.Cast(targetQ);
             }
-            if (targetR != null && targetR.Health < R.GetDamage(targetR) && R.IsReady())
+            if (Menu.Item("KillstealR").GetValue<bool>() && targetR != null && targetR.Health < R.GetDamage(targetR) && R.IsReady())
             {
-                R.Cast(targetR);
+                    R.Cast(targetR);       
             }
         }
         private static void Harass()
@@ -121,22 +122,59 @@ namespace NoobDiana
         }
         private static void Combo()
         {
+            var misaya = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 1);
+            var normal = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 0);
             var target = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Magical);
             if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Combo)
                 return;
-            
-            if (Menu.Item("useR").GetValue<bool>() && R.IsReady()) R.CastOnUnit(target);
+            /*
+            if (Menu.Item("useR").GetValue<bool>() && R.IsReady() && Q.IsReady()) R.CastOnUnit(target);
             if (Menu.Item("useQ").GetValue<bool>() && Q.IsReady() && Q.IsInRange(target)) Q.Cast(target.Position);                      
             if (Menu.Item("useW").GetValue<bool>() && W.IsInRange(target) && W.IsReady()) W.Cast();
             if (Menu.Item("useE").GetValue<bool>() && E.IsInRange(target) && E.IsReady()) E.Cast();
+            if (Menu.Item("useR2").GetValue<bool>() && !Q.IsReady()) R.CastOnUnit(target);
+            */
+            if (misaya)
+            {
+                if (R.IsReady())
+                {
+                    if (Menu.Item("useR").GetValue<bool>() && Q.IsReady()) R.CastOnUnit(target);
+                    if (Menu.Item("useQ").GetValue<bool>() && Q.IsReady() && Q.IsInRange(target)) Q.Cast(target.Position);
+                    if (Menu.Item("useW").GetValue<bool>() && W.IsInRange(target) && W.IsReady()) W.Cast();
+                    if (Menu.Item("useE").GetValue<bool>() && E.IsInRange(target) && E.IsReady()) E.Cast();
+                    if (Menu.Item("useR2").GetValue<bool>() && !Q.IsReady()) R.CastOnUnit(target);
+                }
+                if (!R.IsReady())
+                {
+                    if (Menu.Item("useQ").GetValue<bool>() && Q.IsReady() && Q.IsInRange(target)) Q.Cast(target.Position);
+                    if (Menu.Item("useW").GetValue<bool>() && W.IsInRange(target) && W.IsReady()) W.Cast();
+                    if (Menu.Item("useE").GetValue<bool>() && E.IsInRange(target) && E.IsReady()) E.Cast();
+                }
+            }
+            if (normal)
+            {
+                if (R.IsReady())
+                {
+                    if (Menu.Item("useQ").GetValue<bool>() && Q.IsReady()) Q.Cast(target.ServerPosition);
+                    if (Menu.Item("useR").GetValue<bool>() && Q.IsReady()) R.CastOnUnit(target);
+                    if (Menu.Item("useW").GetValue<bool>() && W.IsInRange(target) && W.IsReady()) W.Cast();
+                    if (Menu.Item("useE").GetValue<bool>() && E.IsInRange(target) && E.IsReady()) E.Cast();
+                    if (Menu.Item("useR2").GetValue<bool>() && !Q.IsReady()) R.CastOnUnit(target);
+                }
+                if (!R.IsReady())
+                {
+                    if (Menu.Item("useQ").GetValue<bool>() && Q.IsReady() && Q.IsInRange(target)) Q.Cast(target.Position);
+                    if (Menu.Item("useW").GetValue<bool>() && W.IsInRange(target) && W.IsReady()) W.Cast();
+                    if (Menu.Item("useE").GetValue<bool>() && E.IsInRange(target) && E.IsReady()) E.Cast();
+                }
+            }        
         }
         private static void Farm()
         {
             if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear)
                 return;
             var allLaneMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, Q.Range);
-            var allJungleMinions = MinionManager.GetMinions(
-                            ObjectManager.Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+
             //Lane
             if (Menu.Item("laneclearQ").GetValue<bool>() && Q.IsReady())
             {
