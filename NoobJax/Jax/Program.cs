@@ -77,6 +77,7 @@ namespace NoobJax
 
             var miscMenu = new Menu("Misc", "Misc");
             Menu.AddSubMenu(miscMenu);
+            miscMenu.AddItem(new MenuItem("drawQ", "Draw Q range").SetValue(true));
             miscMenu.AddItem(new MenuItem("usejump", "Use Wardjump").SetValue(true));
             miscMenu.AddItem(new MenuItem("jumpkey", "Wardjump Key").SetValue(new KeyBind("Z".ToCharArray()[0], KeyBindType.Press))); //Standardkey für Wardjump
             miscMenu.AddItem(new MenuItem("Killsteal", "Killsteal with Q").SetValue(true));
@@ -91,8 +92,19 @@ namespace NoobJax
             Game.OnUpdate += OnUpdate;
             Orbwalking.OnAttack += OnAa;
             Orbwalking.AfterAttack += AfterAa;
+            Drawing.OnDraw += OnDraw;
             Game.PrintChat("NoobJax by 1Shinigamix3");
         }
+
+        private static void OnDraw(EventArgs args)
+        {
+            if (Menu.Item("drawQ").GetValue<bool>())
+            {
+                Render.Circle.DrawCircle(Player.Position, Q.Range, System.Drawing.Color.DarkRed, 3);
+            }
+            Render.Circle.DrawCircle(Player.Position, 200, System.Drawing.Color.Blue, 3);
+        }
+
         private static void OnUpdate(EventArgs args)
         {
             if (Menu.Item("Killsteal").GetValue<bool>())
@@ -261,7 +273,7 @@ namespace NoobJax
             var m = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
             if (m != null && m.Health < Q.GetDamage(m) && Q.IsReady())
             {
-                Q.Cast(m);
+                Q.CastOnUnit(m);
             }
         }
         private static void Combo()
@@ -281,22 +293,19 @@ namespace NoobJax
             {
                 hextech.Cast(m);
             }
-            if (Menu.Item("useQ").GetValue<bool>()) if (m != null && Player.Distance(m.Position) > 125) Q.CastOnBestTarget();    
-                if (E.IsReady() && (Menu.Item("useE").GetValue<bool>()))
-                {
-                    if ((!IsEUsed && Q.IsReady() && m.IsValidTarget(Q.Range)) || (!IsEUsed && m != null && Player.Distance(m.Position) < 200))
+            if (Menu.Item("useQ").GetValue<bool>() && m != null && Player.Distance(m.Position) > 200) Q.CastOnUnit(m);    
+            if (E.IsReady() && (Menu.Item("useE").GetValue<bool>()))
+            {
+               if ((!IsEUsed && Q.IsReady() && m.IsValidTarget(Q.Range)) || (!IsEUsed && m != null && Player.Distance(m.Position) < 200))
                     {
                         E.Cast();
                     }
-                    if (Menu.Item("useE2").GetValue<bool>())
-                    {
-                        if (IsEUsed && m != null && Player.Distance(m.Position) > 125)
-                        {
-                            E.Cast();
-                        }
+                    if (Menu.Item("useE2").GetValue<bool>() && (IsEUsed && m != null && Player.Distance(m.Position) > 125))
+                    {                                           
+                            E.Cast();                     
                     }
                 }           
-            if (Menu.Item("useR").GetValue<bool>()) R.Cast(m);
+            if ((Menu.Item("useR").GetValue<bool>() && Q.IsReady()) || (Menu.Item("useR").GetValue<bool>() && !Q.IsReady() && m != null && Player.Distance(m.Position) > 200)) R.Cast(m);
         }
     }
 }
