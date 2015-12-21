@@ -56,9 +56,11 @@ namespace NoobJax
             spellMenu.AddItem(new MenuItem("useW", "Use W").SetValue(true));
             spellMenu.AddItem(new MenuItem("useR", "Use R").SetValue(true));
             spellMenu.AddItem(new MenuItem("usehydratiamat", "Use Tiamat/Hydra").SetValue(true));
-            spellMenu.AddItem(new MenuItem("", "E options"));
+            spellMenu.AddItem(new MenuItem("space1", "E options"));
             spellMenu.AddItem(new MenuItem("useE", "Use E").SetValue(true));
             spellMenu.AddItem(new MenuItem("useE2", "Use second E").SetValue(true).SetTooltip("Turn this off if you want to use second E manually."));
+            spellMenu.AddItem(new MenuItem("space2", "Q option"));
+            spellMenu.AddItem(new MenuItem("useQ2", "Use Q when enemy is in AA Range").SetValue(false).SetTooltip("Turn this on to use Q when enemy is in AA range"));
 
             var lc = new Menu("Laneclear", "Laneclear");
             Menu.AddSubMenu(lc);
@@ -293,7 +295,13 @@ namespace NoobJax
             {
                 hextech.Cast(m);
             }
-            if (Menu.Item("useQ").GetValue<bool>() && m != null && Player.Distance(m.Position) > 200) Q.CastOnUnit(m);    
+            if (Q.IsReady() && Menu.Item("useQ").GetValue<bool>())
+            {
+                if ((m != null && Player.Distance(m.Position) > 200) || (m != null && Menu.Item("useQ2").GetValue<bool>()))
+                {
+                    Q.CastOnUnit(m);
+                }
+            }
             if (E.IsReady() && (Menu.Item("useE").GetValue<bool>()))
             {
                if ((!IsEUsed && Q.IsReady() && m.IsValidTarget(Q.Range)) || (!IsEUsed && m != null && Player.Distance(m.Position) < 200))
@@ -304,7 +312,7 @@ namespace NoobJax
                     {                                           
                             E.Cast();                     
                     }
-                }           
+            }           
             if ((Menu.Item("useR").GetValue<bool>() && Q.IsReady()) || (Menu.Item("useR").GetValue<bool>() && !Q.IsReady() && m != null && Player.Distance(m.Position) > 200)) R.Cast(m);
         }
     }
