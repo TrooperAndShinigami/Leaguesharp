@@ -53,16 +53,11 @@ namespace NoobFizz
             var combo = new Menu("Combo", "Combo");
             Menu.AddSubMenu(combo);
             combo.AddItem(new MenuItem("ComboMode", "ComboMode").SetValue(new StringList(new[] { "R after Dash", "R on Dash" })));
-            combo.AddItem(new MenuItem("space", ""));
             combo.AddItem(new MenuItem("Combo", "Combo"));
             combo.AddItem(new MenuItem("useQ", "Use Q").SetValue(true));
             combo.AddItem(new MenuItem("useW", "Use W").SetValue(true));
-            combo.AddItem(new MenuItem("useE", "Use E").SetValue(false));
-            combo.AddItem(new MenuItem("useR", "Use R").SetValue(false));
-            //Harass
-           /* var harass = new Menu("Harass", "Harass");
-            Menu.AddSubMenu(harass);
-            harass.AddItem(new MenuItem("harassWQ", "Use W+Q after an AA").SetValue(true));*/
+            combo.AddItem(new MenuItem("useE", "Use E").SetValue(true));
+            combo.AddItem(new MenuItem("useR", "Use R").SetValue(true));
             //LaneClear Menu
             var lc = new Menu("Laneclear", "Laneclear");
             Menu.AddSubMenu(lc);
@@ -77,7 +72,8 @@ namespace NoobFizz
             jungle.AddItem(new MenuItem("jungleclearE", "Use E to JungleClear").SetValue(true));
 
             var miscMenu = new Menu("Misc", "Misc");
-            Menu.AddSubMenu(miscMenu);           
+            Menu.AddSubMenu(miscMenu);
+            miscMenu.AddItem(new MenuItem("drawQ", "Draw Q range").SetValue(true));
             miscMenu.AddItem(new MenuItem("Killsteal", "Killsteal with Q").SetValue(true));
 
             hydra = new Items.Item(3074, 185);
@@ -89,8 +85,19 @@ namespace NoobFizz
 
             Game.OnUpdate += OnUpdate;
             Orbwalking.AfterAttack += AfterAa;
+            Drawing.OnDraw += OnDraw;
             Game.PrintChat("NoobFizz by 1Shinigamix3");
         }
+
+        private static void OnDraw(EventArgs args)
+        {
+            if (Menu.Item("drawQ").GetValue<bool>())
+            {
+                Render.Circle.DrawCircle(Player.Position, Q.Range, System.Drawing.Color.DarkRed, 3);
+            }
+            Render.Circle.DrawCircle(Player.Position, 200, System.Drawing.Color.Blue, 3);
+        }
+
         private static void OnUpdate(EventArgs args)
         {
             if (Menu.Item("Killsteal").GetValue<bool>())
@@ -227,18 +234,18 @@ namespace NoobFizz
                 hextech.Cast(m);
             }
             if (ondash)
-            {
-                if (useW && Q.IsReady()) if (Player.Distance(m.Position) < Q.Range) W.Cast();
-                if (useQ) if (Player.Distance(m.Position) > 175) Q.CastOnBestTarget();
-                if (useR)
-                    UseTr(m);
+            {             
+                if (useQ && Player.Distance(m.Position) > 175) Q.CastOnUnit(m);
+                if (useW && (Player.Distance(m.Position) < 551)) W.Cast();
+                if (useR) R.CastOnUnit(m);
+
                 if (hydra.IsOwned() && Player.Distance(m) < hydra.Range && hydra.IsReady() && !E.IsReady()) hydra.Cast();
                 if (tiamat.IsOwned() && Player.Distance(m) < tiamat.Range && tiamat.IsReady() && !E.IsReady()) tiamat.Cast();
             }
             if (afterdash)
             {
-                if (useW && Q.IsReady()) if (Player.Distance(m.Position) < Q.Range) W.Cast();
-                if (useQ) if (Player.Distance(m.Position) > 175) Q.CastOnBestTarget();
+                if (useW && Q.IsReady() && Player.Distance(m.Position) < Q.Range) W.Cast();
+                if (useQ && Player.Distance(m.Position) > 175) Q.CastOnBestTarget();
                 if (useE && !R.IsReady()) E.Cast(Game.CursorPos);
                 if (hydra.IsOwned() && Player.Distance(m) < hydra.Range && hydra.IsReady() && !E.IsReady()) hydra.Cast();
                 if (tiamat.IsOwned() && Player.Distance(m) < tiamat.Range && tiamat.IsReady() && !E.IsReady()) tiamat.Cast();
