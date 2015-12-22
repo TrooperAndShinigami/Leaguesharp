@@ -211,10 +211,10 @@ namespace NoobFizz
         }
         private static void Jungle()
         {
-            var lanemana = Menu.Item("lanemana").GetValue<Slider>().Value;
+            var junglemana = Menu.Item("junglemana").GetValue<Slider>().Value;
             var allMinions = MinionManager.GetMinions(
                 ObjectManager.Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
-            if (Player.ManaPercent <= lanemana) return;
+            if (Player.ManaPercent <= junglemana) return;
             {
                 if (Menu.Item("jungleclearW").GetValue<bool>() && W.IsReady())
                 {
