@@ -77,6 +77,8 @@ namespace NoobFizz
             Menu.AddSubMenu(miscMenu);
             miscMenu.AddItem(new MenuItem("drawQ", "Draw Q range").SetValue(true));
             miscMenu.AddItem(new MenuItem("Killsteal", "Killsteal with Q").SetValue(true));
+            miscMenu.AddItem(new MenuItem("Flee", "Flee Key").SetValue(new KeyBind("T".ToCharArray()[0], KeyBindType.Press)));
+            miscMenu.AddItem(new MenuItem("useFleeE", "Use E to Flee").SetValue(true));
 
             hydra = new Items.Item(3074, 185);
             tiamat = new Items.Item(3077, 185);
@@ -122,6 +124,18 @@ namespace NoobFizz
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
             {
                 Harass();
+            }
+            if (Menu.Item("Flee").GetValue<KeyBind>().Active)
+            {
+                Flee();
+            }
+        }
+        private static void Flee()
+        {
+            Player.IssueOrder(GameObjectOrder.MoveTo, Game.CursorPos);
+            if (Menu.Item("useFleeE").GetValue<bool>() && E.IsReady())
+            {
+                E.Cast(Game.CursorPos);
             }
         }
         private static void AfterAa(AttackableUnit unit, AttackableUnit target)
