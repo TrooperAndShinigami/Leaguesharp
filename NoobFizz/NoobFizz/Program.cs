@@ -216,7 +216,7 @@ namespace NoobFizz
                 ObjectManager.Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
             if (Player.ManaPercent <= lanemana) return;
             {
-                if (Menu.Item("jungleclearW").GetValue<bool>() && W.IsReady() && Q.IsReady())
+                if (Menu.Item("jungleclearW").GetValue<bool>() && W.IsReady())
                 {
                     foreach (var minion in allMinions)
                     {
