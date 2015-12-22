@@ -64,7 +64,7 @@ namespace NoobFizz
             lc.AddItem(new MenuItem("laneclearQ", "Use Q to LaneClear").SetValue(true));
             lc.AddItem(new MenuItem("laneclearW", "Use W to LaneClear").SetValue(true));
             lc.AddItem(new MenuItem("laneclearE", "Use E to LaneClear").SetValue(true));
-            lc.AddItem(new MenuItem("lanemana", " % Mana").SetValue(new Slider(10, 100, 0)));
+            lc.AddItem(new MenuItem("lanemana", " % Mana").SetValue(new Slider(20, 100, 0)));
             //Jungle Clear Menu
             var jungle = new Menu("JungleClear", "JungleClear");
             Menu.AddSubMenu(jungle);
