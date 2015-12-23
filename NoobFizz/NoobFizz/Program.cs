@@ -12,7 +12,7 @@ namespace NoobFizz
     {
         public const string ChampionName = "Fizz";
         public static Obj_AI_Hero Player => ObjectManager.Player;
-
+        public static List<Obj_AI_Base> MinionList;
         public static Orbwalking.Orbwalker Orbwalker;
         //Menu
         public static Menu Menu;
@@ -52,27 +52,34 @@ namespace NoobFizz
             //Combo Menu
             var combo = new Menu("Combo", "Combo");
             Menu.AddSubMenu(combo);
-            combo.AddItem(new MenuItem("ComboMode", "ComboMode").SetValue(new StringList(new[] { "R after Dash", "R on Dash" })));
+            combo.AddItem(new MenuItem("ComboMode", "ComboMode").SetValue(new StringList(new[] { "R after Dash", "R on Dash", "R to gapclose" })));
             combo.AddItem(new MenuItem("Combo", "Combo"));
             combo.AddItem(new MenuItem("useQ", "Use Q").SetValue(true));
             combo.AddItem(new MenuItem("useW", "Use W").SetValue(true));
             combo.AddItem(new MenuItem("useE", "Use E").SetValue(true));
             combo.AddItem(new MenuItem("useR", "Use R").SetValue(true));
+            //Harass Menu
+            var harass = new Menu("Harass", "Harass");
+            Menu.AddSubMenu(harass);
+            harass.AddItem(new MenuItem("useharassQ", "Use Q").SetValue(true));
+            harass.AddItem(new MenuItem("useharassW", "Use W").SetValue(true));
+            harass.AddItem(new MenuItem("useharassE", "Use E").SetValue(true));
+            harass.AddItem(new MenuItem("harassmana", "Min Harass Mana").SetValue(new Slider(30)));
             //LaneClear Menu
             var lc = new Menu("Laneclear", "Laneclear");
             Menu.AddSubMenu(lc);
             lc.AddItem(new MenuItem("laneclearQ", "Use Q to LaneClear").SetValue(true));
             lc.AddItem(new MenuItem("laneclearW", "Use W to LaneClear").SetValue(true));
             lc.AddItem(new MenuItem("laneclearE", "Use E to LaneClear").SetValue(true));
-            lc.AddItem(new MenuItem("lanemana", " % Mana").SetValue(new Slider(20, 100, 0)));
-            //Jungle Clear Menu
+            lc.AddItem(new MenuItem("lanemana", "Min Farm Mana").SetValue(new Slider(30)));
+            //JungleClear Menu
             var jungle = new Menu("JungleClear", "JungleClear");
             Menu.AddSubMenu(jungle);
             jungle.AddItem(new MenuItem("jungleclearQ", "Use Q to JungleClear").SetValue(true));
             jungle.AddItem(new MenuItem("jungleclearW", "Use W to JungleClear").SetValue(true));
             jungle.AddItem(new MenuItem("jungleclearE", "Use E to JungleClear").SetValue(true));
-            jungle.AddItem(new MenuItem("junglemana", " % Mana").SetValue(new Slider(20, 100, 0)));
-
+            jungle.AddItem(new MenuItem("junglemana", "Min Jungle Mana").SetValue(new Slider(30)));
+            //Misc Menu
             var miscMenu = new Menu("Misc", "Misc");
             Menu.AddSubMenu(miscMenu);
             miscMenu.AddItem(new MenuItem("drawQ", "Draw Q range").SetValue(true));
@@ -99,7 +106,7 @@ namespace NoobFizz
             {
                 Render.Circle.DrawCircle(Player.Position, Q.Range, System.Drawing.Color.DarkRed, 3);
             }
-            Render.Circle.DrawCircle(Player.Position, 200, System.Drawing.Color.Blue, 3);
+            Render.Circle.DrawCircle(Player.Position, Orbwalking.GetRealAutoAttackRange(Player), System.Drawing.Color.Blue);
         }
 
         private static void OnUpdate(EventArgs args)
@@ -137,6 +144,83 @@ namespace NoobFizz
             {
                 E.Cast(Game.CursorPos);
             }
+        }      
+        //R usage
+        public static void UseTr(Obj_AI_Hero target)
+        {
+            var castPosition = R.GetPrediction(target).CastPosition;
+            castPosition = Player.ServerPosition.Extend(castPosition, R.Range);
+
+            R.Cast(castPosition);
+        }
+        //Lane&JungleClear
+        private static void Lane()
+        {
+            if (ObjectManager.Player.ManaPercent < Menu.Item("lanemana").GetValue<Slider>().Value)
+            {
+                return; 
+            }
+            if (Menu.Item("laneclearQ").GetValue<bool>() && Q.IsReady())
+            {
+                MinionList = MinionManager.GetMinions(Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health);
+                foreach (var minion in MinionList)
+                {
+                    Q.CastOnUnit(minion);
+                }              
+            }
+            if (Menu.Item("laneclearW").GetValue<bool>() && W.IsReady())
+            {
+                var allMinionsW = MinionManager.GetMinions(Player.Position, W.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health).ToList();
+                foreach (var minion in allMinionsW)
+                {
+                    W.Cast(minion);
+                }
+            }
+            if (Menu.Item("laneclearE").GetValue<bool>() && E.Instance.Name == "FizzJump" && E.IsReady())
+            {
+                var allMinionsE = MinionManager.GetMinions(Player.Position, E.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health).ToList();
+                foreach (var minion in allMinionsE)
+                {
+                    E.Cast(minion);
+                }
+            }
+        }
+        private static void Jungle()
+        {
+            if (ObjectManager.Player.ManaPercent < Menu.Item("junglemana").GetValue<Slider>().Value)
+            {
+                return;
+            }
+            var mobs = MinionManager.GetMinions(Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+            if (!mobs.Any())
+                return;
+            var mob = mobs.First();
+
+            if (Menu.Item("jungleclearQ").GetValue<bool>() && Q.IsReady() && mob.IsValidTarget(Q.Range))
+            {
+                Q.CastOnUnit(mob);
+            }
+            if (Menu.Item("jungleclearW").GetValue<bool>() && W.IsReady() && mob.IsValidTarget(W.Range))
+            {
+                W.Cast(mob);
+            }
+            if (Menu.Item("jungleclearE").GetValue<bool>() && E.IsReady() && mob.IsValidTarget(E.Range))
+            {
+                E.Cast(mob.ServerPosition);
+            }
+        }
+        private static void Harass()
+        {
+            var useQ = (Menu.Item("useharassQ").GetValue<bool>() && Q.IsReady());
+            var useW = (Menu.Item("useharassW").GetValue<bool>() && W.IsReady());
+            var target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
+            if (ObjectManager.Player.ManaPercent < Menu.Item("harassmana").GetValue<Slider>().Value)
+            {
+                return;
+            }
+            if (useW && (Player.Distance(target.Position) < Q.Range)) W.Cast();
+            if (useQ && Player.Distance(target.Position) > 175) Q.CastOnUnit(target);
+                      
         }
         private static void AfterAa(AttackableUnit unit, AttackableUnit target)
         {
@@ -150,7 +234,7 @@ namespace NoobFizz
             {
                 if (ondash)
                 {
-                    if (useE && !R.IsReady() && E.Instance.Name == "FizzJump") E.Cast(Game.CursorPos);
+                    if (useE && !R.IsReady() && E.Instance.Name == "FizzJump" && Player.Distance(m.Position) < E.Range) E.Cast(Game.CursorPos);
                 }
                 if (afterdash)
                 {
@@ -159,104 +243,8 @@ namespace NoobFizz
             }
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
             {
-                if (useE && !W.IsReady() && !Q.IsReady()) E.Cast(Game.CursorPos);
+                if ((Menu.Item("useharassE").GetValue<bool>() && E.IsReady()) && !W.IsReady() && !Q.IsReady()) E.Cast(Game.CursorPos);
             }
-        }
-        //R usage
-        /*public static void UseTr(Obj_AI_Hero target)
-        {
-            var castPosition = R.GetPrediction(target).CastPosition;
-            castPosition = Player.ServerPosition.Extend(castPosition, R.Range);
-
-            R.Cast(castPosition);
-        }*/
-        //Lane&JungleClear
-        private static void Lane()
-        {
-            var lanemana = Menu.Item("lanemana").GetValue<Slider>().Value;
-            var allMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, Q.Range);
-            if (Player.ManaPercent <= lanemana) return;
-            {
-                if (Menu.Item("laneclearW").GetValue<bool>() && Q.IsReady() && W.IsReady())
-                {
-                    foreach (var minion in allMinions)
-                    {
-                        if (minion.IsValidTarget())
-                        {
-                            W.Cast();
-                        }
-                    }
-                }
-                if (Menu.Item("laneclearQ").GetValue<bool>() && Q.IsReady())
-                {
-                    foreach (var minion in allMinions)
-                    {
-                        if (minion.IsValidTarget())
-                        {
-                            Q.CastOnUnit(minion);
-                        }
-                    }
-                }
-                if (Menu.Item("laneclearE").GetValue<bool>() && E.Instance.Name == "FizzJump" && E.IsReady())
-                {
-                    foreach (var minion in allMinions)
-                    {
-                        if (minion.IsValidTarget())
-                        {
-                            E.Cast(Game.CursorPos);
-                        }
-                    }
-                }
-            }     
-        }
-        private static void Jungle()
-        {
-            var junglemana = Menu.Item("junglemana").GetValue<Slider>().Value;
-            var allMinions = MinionManager.GetMinions(
-                ObjectManager.Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
-            if (Player.ManaPercent <= junglemana) return;
-            {
-                if (Menu.Item("jungleclearW").GetValue<bool>() && W.IsReady())
-                {
-                    foreach (var minion in allMinions)
-                    {
-                        if (minion.IsValidTarget())
-                        {
-                            W.Cast();
-                        }
-                    }
-                }
-                if (Menu.Item("jungleclearQ").GetValue<bool>() && Q.IsReady())
-                {
-                    foreach (var minion in allMinions)
-                    {
-                        if (minion.IsValidTarget())
-                        {
-                            Q.CastOnUnit(minion);
-                        }
-                    }
-                }
-                if (Menu.Item("jungleclearE").GetValue<bool>() && E.Instance.Name == "FizzJump" && E.IsReady())
-                {
-                    foreach (var minion in allMinions)
-                    {
-                        if (minion.IsValidTarget())
-                        {
-                            E.Cast(Game.CursorPos);
-                        }
-                    }
-                }
-            }
-        }
-        private static void Harass()
-        {
-            var useQ = (Menu.Item("useQ").GetValue<bool>() && Q.IsReady());
-            var useW = (Menu.Item("useW").GetValue<bool>() && W.IsReady());
-            var target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
-
-            if (useW && (Player.Distance(target.Position) < Q.Range)) W.Cast();
-            if (useQ && Player.Distance(target.Position) > 175) Q.CastOnUnit(target);
-                      
         }
         private static void Combo()
         {
@@ -264,9 +252,11 @@ namespace NoobFizz
             var useW = (Menu.Item("useW").GetValue<bool>() && W.IsReady());
             var useE = (Menu.Item("useE").GetValue<bool>() && E.IsReady());
             var useR = (Menu.Item("useR").GetValue<bool>() && R.IsReady());
+            var gapclose = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 2);
             var ondash = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 1);
             var afterdash = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 0);
             var m = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
+            var target = TargetSelector.GetTarget(700, TargetSelector.DamageType.Magical);
             if (m != null && Player.Distance(m) <= botrk.Range)
             {
                 botrk.Cast(m);
@@ -291,17 +281,31 @@ namespace NoobFizz
             {
                 if (useW && Player.Distance(m.Position) < Q.Range) W.Cast();
                 if (useQ && Player.Distance(m.Position) > 175) Q.CastOnBestTarget();
-                if (useE && !R.IsReady() && E.Instance.Name == "FizzJump") E.Cast(Game.CursorPos);
+                if (useE && !R.IsReady() && E.Instance.Name == "FizzJump" && Player.Distance(m.Position) < E.Range) E.Cast(Game.CursorPos);
+                if (hydra.IsOwned() && Player.Distance(m) < hydra.Range && hydra.IsReady() && !E.IsReady()) hydra.Cast();
+                if (tiamat.IsOwned() && Player.Distance(m) < tiamat.Range && tiamat.IsReady() && !E.IsReady()) tiamat.Cast();
+            }
+            if (gapclose)
+            {
+                if (useR) UseTr(target);
+                if (useQ && Player.Distance(m.Position) > 175) Q.CastOnUnit(m);
+                if (useW && Player.Distance(m.Position) < Q.Range) W.Cast();
+                if (useE && !R.IsReady() && E.Instance.Name == "FizzJump" && Player.Distance(m.Position) < E.Range) E.Cast(Game.CursorPos);
                 if (hydra.IsOwned() && Player.Distance(m) < hydra.Range && hydra.IsReady() && !E.IsReady()) hydra.Cast();
                 if (tiamat.IsOwned() && Player.Distance(m) < tiamat.Range && tiamat.IsReady() && !E.IsReady()) tiamat.Cast();
             }
         }
         private static void Killsteal()
         {
-            var m = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
-            if (m != null && m.Health < Q.GetDamage(m) && Q.IsReady())
+            var targetQ = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
+            var targetR = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Magical);
+            if (targetQ != null && targetQ.Health < Q.GetDamage(targetQ) && Q.IsReady())
             {
-                Q.Cast(m);
+                Q.Cast(targetQ);
+            }
+            if (targetR != null && targetR.Health < R.GetDamage(targetR) && R.IsReady())
+            {
+                UseTr(targetR);
             }
         }
     }
