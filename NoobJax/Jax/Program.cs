@@ -64,7 +64,6 @@ namespace NoobJax
 
             var lc = new Menu("Laneclear", "Laneclear");
             Menu.AddSubMenu(lc);
-            lc.AddItem(new MenuItem("laneclearQ", "Use Q to LaneClear").SetValue(true));
             lc.AddItem(new MenuItem("laneclearW", "Use W to LaneClear").SetValue(true));
 
             var jc = new Menu("JungleClear", "JungleClear");
@@ -91,7 +90,7 @@ namespace NoobJax
             botrk = new Items.Item(3153, 450);
             hextech = new Items.Item(3146, 700);
             Menu.AddToMainMenu();
-
+            OnDoCast();
             Game.OnUpdate += OnUpdate;
             Orbwalking.OnAttack += OnAa;
             Orbwalking.AfterAttack += AfterAa;
@@ -99,6 +98,80 @@ namespace NoobJax
             Game.PrintChat("NoobJax by 1Shinigamix3");
         }
 
+        private static void OnDoCast()
+        {
+            Obj_AI_Base.OnDoCast += (sender, args) =>
+            {
+                //if (!sender.IsMe || !Orbwalking.IsAutoAttack((args.SData.Name))) return;
+                if (sender.IsMe && args.SData.IsAutoAttack())
+                {
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+                    {
+                        if (Menu.Item("useW").GetValue<bool>() && W.IsReady()) W.Cast();
+                    }
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                    {
+                        if (args.Target is Obj_AI_Minion)
+                        {
+                            var allJungleMinions = MinionManager.GetMinions(Q.Range, MinionTypes.All,
+                        MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+                            //Jungle 
+                            if (allJungleMinions.Count != 0)
+                            {
+                                if (Menu.Item("JungleClearE").GetValue<bool>() && E.IsReady() && !IsEUsed)
+                                {
+                                    foreach (var minion in allJungleMinions)
+                                    {
+                                        if (minion.IsValidTarget())
+                                        {
+                                            E.Cast(minion);
+                                        }
+                                    }
+                                }
+                                if (Menu.Item("JungleClearQ").GetValue<bool>() && Q.IsReady())
+                                {
+                                    foreach (var minion in allJungleMinions)
+                                    {
+                                        if (minion.IsValidTarget())
+                                        {
+                                            Q.CastOnUnit(minion);
+                                        }
+                                    }
+                                }
+                                if (Menu.Item("JungleClearW").GetValue<bool>() && W.IsReady())
+                                {
+                                    foreach (var minion in allJungleMinions)
+                                    {
+                                        if (minion.IsValidTarget())
+                                        {
+                                            W.Cast(minion);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                        if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                        {
+                            if (args.Target is Obj_AI_Minion)
+                            {
+                                var allLaneMinions = MinionManager.GetMinions(Q.Range);
+                                //Lane
+                                if (Menu.Item("laneclearW").GetValue<bool>() && W.IsReady())
+                                {
+                                    foreach (var minion in allLaneMinions)
+                                    {
+                                        if (minion.IsValidTarget())
+                                        {
+                                            W.Cast(minion);
+                                        }
+                                    }
+                                }
+                            }
+                        }                   
+                }
+            };
+         }
         private static void OnDraw(EventArgs args)
         {
             if (Menu.Item("drawQ").GetValue<bool>())
@@ -150,15 +223,15 @@ namespace NoobJax
         }
         private static void AfterAa(AttackableUnit unit, AttackableUnit target)
         {          
-            var allJungleMinions = MinionManager.GetMinions(
+            /*var allJungleMinions = MinionManager.GetMinions(
                 ObjectManager.Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
-            var allLaneMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, Q.Range);
+            var allLaneMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, Q.Range);*/
 
             //Combo AAreset
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+            /*if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
                 if (Menu.Item("useW").GetValue<bool>() && W.IsReady()) W.Cast();
-            }
+            }*/
             //Harass AAreset
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
             {
@@ -166,7 +239,7 @@ namespace NoobJax
             }
 
             //Farm
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+            /*if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
             {
                 //Jungle 
                 if (Menu.Item("JungleClearE").GetValue<bool>() && E.IsReady() && !IsEUsed)
@@ -221,7 +294,7 @@ namespace NoobJax
                     }
                 }
 
-            }
+            }*/
         }
         public static void WardJump()
         {
