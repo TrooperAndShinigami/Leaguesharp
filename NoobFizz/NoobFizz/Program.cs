@@ -82,7 +82,8 @@ namespace NoobFizz
             //Misc Menu
             var miscMenu = new Menu("Misc", "Misc");
             Menu.AddSubMenu(miscMenu);
-            miscMenu.AddItem(new MenuItem("drawQ", "Draw Q range").SetValue(true));
+            miscMenu.AddItem(new MenuItem("drawQ", "Draw Q range").SetValue(false));
+            miscMenu.AddItem(new MenuItem("drawAa", "Draw Autoattack range").SetValue(false));
             miscMenu.AddItem(new MenuItem("Killsteal", "Killsteal with Q").SetValue(true));
             miscMenu.AddItem(new MenuItem("Flee", "Flee Key").SetValue(new KeyBind("T".ToCharArray()[0], KeyBindType.Press)));
             miscMenu.AddItem(new MenuItem("useFleeE", "Use E to Flee").SetValue(true));
@@ -106,7 +107,10 @@ namespace NoobFizz
             {
                 Render.Circle.DrawCircle(Player.Position, Q.Range, System.Drawing.Color.DarkRed, 3);
             }
-            Render.Circle.DrawCircle(Player.Position, Orbwalking.GetRealAutoAttackRange(Player), System.Drawing.Color.Blue);
+            if (Menu.Item("drawAa").GetValue<bool>())
+            {
+                Render.Circle.DrawCircle(Player.Position, Orbwalking.GetRealAutoAttackRange(Player), System.Drawing.Color.Blue);
+            }
         }
 
         private static void OnUpdate(EventArgs args)

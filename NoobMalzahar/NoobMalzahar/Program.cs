@@ -61,7 +61,7 @@ namespace NoobMalzahar
 
             var miscMenu = new Menu("Misc", "Misc");
             Menu.AddSubMenu(miscMenu);
-            miscMenu.AddItem(new MenuItem("drawQ", "Draw Q range").SetValue(true));
+            miscMenu.AddItem(new MenuItem("drawQ", "Draw Q range").SetValue(false));
             miscMenu.AddItem(new MenuItem("oneshot", "Burst Combo").SetValue(new KeyBind("T".ToCharArray()[0], KeyBindType.Press)).SetTooltip("It will cast Q+E+W+R on enemy when enemy is in E range."));
             Menu.AddToMainMenu();
 
