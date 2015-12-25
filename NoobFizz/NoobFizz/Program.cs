@@ -31,8 +31,6 @@ namespace NoobFizz
 
         private static Obj_AI_Base Target;
 
-       private static bool IsEUsed => Player.HasBuff("FizzJump");
-
         private static void Main(string[] args)
         {
             CustomEvents.Game.OnGameLoad += Game_OnGameLoad;
@@ -95,12 +93,42 @@ namespace NoobFizz
             hextech = new Items.Item(3146, 700);
             Menu.AddToMainMenu();
 
+            OnDoCast();
             Game.OnUpdate += OnUpdate;
-            Orbwalking.AfterAttack += AfterAa;
+            //Orbwalking.AfterAttack += AfterAa;
             Drawing.OnDraw += OnDraw;
-            Game.PrintChat("NoobFizz by 1Shinigamix3");
+            Game.PrintChat("<font color='#00CC83'>Noob</font> <font color='#B6250B'>Fizz</font><font color='#00B4D2'>Loaded</font>");
+            Game.PrintChat("<font color='#00B4D2'>Don't forget to upvote if you like NoobJax! </font>");
         }
-
+        private static void OnDoCast()
+        {        
+            Obj_AI_Base.OnDoCast += (sender, args) =>
+            {
+                if (sender.IsMe && args.SData.IsAutoAttack())
+                {
+                    var useE = (Menu.Item("useE").GetValue<bool>() && E.IsReady());
+                    var useR = (Menu.Item("useR").GetValue<bool>() && R.IsReady());
+                    var ondash = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 1);
+                    var afterdash = (Menu.Item("ComboMode").GetValue<StringList>().SelectedIndex == 0);
+                    var target = (Obj_AI_Hero)args.Target;
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+                    {
+                        if (ondash)
+                        {
+                            if (useE && !R.IsReady() && E.Instance.Name == "FizzJump" && Player.Distance(target.Position) < E.Range) E.Cast(Game.CursorPos);
+                        }
+                        if (afterdash)
+                        {
+                            if (useR) R.CastOnUnit(target);
+                        }
+                    }
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+                    {
+                        if ((Menu.Item("useharassE").GetValue<bool>() && E.IsReady()) && !W.IsReady() && !Q.IsReady()) E.Cast(Game.CursorPos);
+                    }
+                }
+            };
+        }
         private static void OnDraw(EventArgs args)
         {
             if (Menu.Item("drawQ").GetValue<bool>())
@@ -112,7 +140,6 @@ namespace NoobFizz
                 Render.Circle.DrawCircle(Player.Position, Orbwalking.GetRealAutoAttackRange(Player), System.Drawing.Color.Blue);
             }
         }
-
         private static void OnUpdate(EventArgs args)
         {
             if (Player.IsDead || Player.IsRecalling())
@@ -226,7 +253,7 @@ namespace NoobFizz
             if (useQ && Player.Distance(target.Position) > 175) Q.CastOnUnit(target);
                       
         }
-        private static void AfterAa(AttackableUnit unit, AttackableUnit target)
+       /* private static void AfterAa(AttackableUnit unit, AttackableUnit target)
         {
             var useE = (Menu.Item("useE").GetValue<bool>() && E.IsReady());
             var useR = (Menu.Item("useR").GetValue<bool>() && R.IsReady());
@@ -249,7 +276,7 @@ namespace NoobFizz
             {
                 if ((Menu.Item("useharassE").GetValue<bool>() && E.IsReady()) && !W.IsReady() && !Q.IsReady()) E.Cast(Game.CursorPos);
             }
-        }
+        }*/
         private static void Combo()
         {
             var useQ = (Menu.Item("useQ").GetValue<bool>() && Q.IsReady());
