@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using LeagueSharp;
 using LeagueSharp.Common;
 using SharpDX;
+using Color = System.Drawing.Color;
 
 namespace NoobJax
 {
@@ -41,7 +42,7 @@ namespace NoobJax
         {
             if (Player.ChampionName != "Jax") return;
 
-            Q = new Spell(SpellSlot.Q, 680);
+            Q = new Spell(SpellSlot.Q, 680f);
             W = new Spell(SpellSlot.W, Orbwalking.GetRealAutoAttackRange(Player));
             E = new Spell(SpellSlot.E);
             R = new Spell(SpellSlot.R);
@@ -53,6 +54,7 @@ namespace NoobJax
 
             var spellMenu = Menu.AddSubMenu(new Menu("Combo", "Combo"));
             spellMenu.AddItem(new MenuItem("useQ", "Use Q").SetValue(true));
+            spellMenu.AddItem(new MenuItem("qsetting", "Q range").SetValue(new Slider(680, 680)).SetTooltip("Don't change anything unless you want a shorter Q range usage"));
             spellMenu.AddItem(new MenuItem("useW", "Use W").SetValue(true));
             spellMenu.AddItem(new MenuItem("useR", "Use R").SetValue(true));
             spellMenu.AddItem(new MenuItem("usehydratiamat", "Use Tiamat/Hydra").SetValue(true));
@@ -78,7 +80,7 @@ namespace NoobJax
 
             var miscMenu = new Menu("Misc", "Misc");
             Menu.AddSubMenu(miscMenu);
-            miscMenu.AddItem(new MenuItem("drawQ", "Draw Q range").SetValue(false));
+            miscMenu.AddItem(new MenuItem("drawsetQ", "Draw set Q range").SetValue(false));
             miscMenu.AddItem(new MenuItem("drawAa", "Draw Autoattack range").SetValue(false));
             miscMenu.AddItem(new MenuItem("usejump", "Use Wardjump").SetValue(true));
             miscMenu.AddItem(new MenuItem("jumpkey", "Wardjump Key").SetValue(new KeyBind("Z".ToCharArray()[0], KeyBindType.Press))); //Standardkey für Wardjump
@@ -93,11 +95,10 @@ namespace NoobJax
             OnDoCast();
             Game.OnUpdate += OnUpdate;
             Orbwalking.OnAttack += OnAa;
-            Orbwalking.AfterAttack += AfterAa;
             Drawing.OnDraw += OnDraw;
-            Game.PrintChat("NoobJax by 1Shinigamix3");
+            Game.PrintChat("<font color='#00CC83'>Noob</font> <font color='#B6250B'>Jax Loaded </font>");
+            Game.PrintChat("<font color='#00B4D2'>Don't forget to upvote if you like NoobJax! </font>");
         }
-
         private static void OnDoCast()
         {
             Obj_AI_Base.OnDoCast += (sender, args) =>
@@ -105,7 +106,7 @@ namespace NoobJax
                 //if (!sender.IsMe || !Orbwalking.IsAutoAttack((args.SData.Name))) return;
                 if (sender.IsMe && args.SData.IsAutoAttack())
                 {
-                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
                     {
                         if (Menu.Item("useW").GetValue<bool>() && W.IsReady()) W.Cast();
                     }
@@ -151,32 +152,32 @@ namespace NoobJax
                             }
                         }
                     }
-                        if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                    {
+                        if (args.Target is Obj_AI_Minion)
                         {
-                            if (args.Target is Obj_AI_Minion)
+                            var allLaneMinions = MinionManager.GetMinions(Q.Range);
+                            //Lane
+                            if (Menu.Item("laneclearW").GetValue<bool>() && W.IsReady())
                             {
-                                var allLaneMinions = MinionManager.GetMinions(Q.Range);
-                                //Lane
-                                if (Menu.Item("laneclearW").GetValue<bool>() && W.IsReady())
+                                foreach (var minion in allLaneMinions)
                                 {
-                                    foreach (var minion in allLaneMinions)
+                                    if (minion.IsValidTarget())
                                     {
-                                        if (minion.IsValidTarget())
-                                        {
-                                            W.Cast(minion);
-                                        }
+                                        W.Cast(minion);
                                     }
                                 }
                             }
-                        }                   
+                        }
+                    }
                 }
             };
          }
         private static void OnDraw(EventArgs args)
         {
-            if (Menu.Item("drawQ").GetValue<bool>())
+            if (Menu.Item("drawsetQ").GetValue<bool>())
             {
-                Render.Circle.DrawCircle(Player.Position, Q.Range, System.Drawing.Color.DarkRed, 3);
+                Render.Circle.DrawCircle(Player.Position, Menu.Item("qsetting").GetValue<Slider>().Value, System.Drawing.Color.Aqua);
             }
             if (Menu.Item("drawAa").GetValue<bool>())
             {
@@ -220,81 +221,6 @@ namespace NoobJax
                         && !IsWUsed)
                     tiamat.Cast();
             }
-        }
-        private static void AfterAa(AttackableUnit unit, AttackableUnit target)
-        {          
-            /*var allJungleMinions = MinionManager.GetMinions(
-                ObjectManager.Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
-            var allLaneMinions = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, Q.Range);*/
-
-            //Combo AAreset
-            /*if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
-            {
-                if (Menu.Item("useW").GetValue<bool>() && W.IsReady()) W.Cast();
-            }*/
-            //Harass AAreset
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
-            {
-                if (Menu.Item("harassW").GetValue<bool>() && W.IsReady()) W.Cast();
-            }
-
-            //Farm
-            /*if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
-            {
-                //Jungle 
-                if (Menu.Item("JungleClearE").GetValue<bool>() && E.IsReady() && !IsEUsed)
-                {
-                    foreach (var minion in allJungleMinions)
-                    {
-                        if (minion.IsValidTarget())
-                        {
-                            E.Cast(minion);
-                        }
-                    }
-                }
-                if (Menu.Item("JungleClearQ").GetValue<bool>() && Q.IsReady())
-                {
-                    foreach (var minion in allJungleMinions)
-                    {
-                        if (minion.IsValidTarget())
-                        {
-                            Q.CastOnUnit(minion);
-                        }
-                    }
-                }
-                if (Menu.Item("JungleClearW").GetValue<bool>() && W.IsReady())
-                {
-                    foreach (var minion in allJungleMinions)
-                    {
-                        if (minion.IsValidTarget())
-                        {
-                            W.Cast(minion);
-                        }
-                    }
-                }
-                //Lane
-                if (Menu.Item("laneclearQ").GetValue<bool>() && Q.IsReady())
-                {
-                    foreach (var minion in allLaneMinions)
-                    {
-                        if (minion.IsValidTarget())
-                        {
-                            Q.CastOnUnit(minion);
-                        }
-                    }
-                }
-                if (Menu.Item("laneclearW").GetValue<bool>() && W.IsReady())
-                {
-                    foreach (var minion in allLaneMinions)
-                    {
-                        if (minion.IsValidTarget())
-                        {
-                            W.Cast(minion);
-                        }
-                    }
-                }
-
-            }*/
         }
         public static void WardJump()
         {
@@ -349,48 +275,49 @@ namespace NoobJax
         }
         private static void Killsteal()
         {
-            var m = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
-            if (m != null && m.Health < Q.GetDamage(m) && Q.IsReady())
+            var tar = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
+            if (Menu.Item("Killsteal").GetValue<bool>() && tar != null && tar.Health < Q.GetDamage(tar) && Q.IsReady())
             {
-                Q.CastOnUnit(m);
+                Q.CastOnUnit(tar);
             }
         }
         private static void Combo()
-        {
+        {            
             if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Combo)
-                return;
-            var m = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
-            if (m != null && Player.Distance(m) <= botrk.Range)
+                return;          
+            var targetQ = TargetSelector.GetTarget(Menu.Item("qsetting").GetValue<Slider>().Value, TargetSelector.DamageType.Physical);
+            var target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);            
+            if (target != null && Player.Distance(target) <= botrk.Range)
             {
-                botrk.Cast(m);
+                botrk.Cast(target);
             }
-            if (m != null && Player.Distance(m) <= cutlass.Range)
+            if (target != null && Player.Distance(target) <= cutlass.Range)
             {
-                cutlass.Cast(m);
+                cutlass.Cast(target);
             }
-            if (m != null && Player.Distance(m) <= hextech.Range)
+            if (target != null && Player.Distance(target) <= hextech.Range)
             {
-                hextech.Cast(m);
+                hextech.Cast(target);
             }
             if (Q.IsReady() && Menu.Item("useQ").GetValue<bool>())
             {
-                if ((m != null && Player.Distance(m.Position) > 200) || (m != null && Menu.Item("useQ2").GetValue<bool>()))
+                if ((targetQ != null && Player.Distance(targetQ.Position) > Orbwalking.GetRealAutoAttackRange(Player)) || (targetQ != null && Menu.Item("useQ2").GetValue<bool>()))
                 {
-                    Q.CastOnUnit(m);
+                    Q.CastOnUnit(targetQ);
                 }
             }
             if (E.IsReady() && (Menu.Item("useE").GetValue<bool>()))
             {
-               if ((!IsEUsed && Q.IsReady() && m.IsValidTarget(Q.Range)) || (!IsEUsed && m != null && Player.Distance(m.Position) < 200))
+               if ((!IsEUsed && Q.IsReady() && target.IsValidTarget(Q.Range)) || (!IsEUsed && target != null && Player.Distance(target.Position) < 200))
                     {
-                        E.Cast();
+                        E.Cast(targetQ);
                     }
-                    if (Menu.Item("useE2").GetValue<bool>() && (IsEUsed && m != null && Player.Distance(m.Position) > 125))
+                    if (Menu.Item("useE2").GetValue<bool>() && (IsEUsed && target != null && Player.Distance(target.Position) > 125))
                     {                                           
                             E.Cast();                     
                     }
             }           
-            if ((Menu.Item("useR").GetValue<bool>() && Q.IsReady()) || (Menu.Item("useR").GetValue<bool>() && !Q.IsReady() && m != null && Player.Distance(m.Position) > 200)) R.Cast(m);
+            if ((Menu.Item("useR").GetValue<bool>() && Q.IsReady()) || (Menu.Item("useR").GetValue<bool>() && !Q.IsReady() && target != null && Player.Distance(target.Position) > Orbwalking.GetRealAutoAttackRange(Player))) R.Cast(target);
         }
     }
 }
