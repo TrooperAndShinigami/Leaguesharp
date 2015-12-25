@@ -98,7 +98,7 @@ namespace NoobFizz
             //Orbwalking.AfterAttack += AfterAa;
             Drawing.OnDraw += OnDraw;
             Game.PrintChat("<font color='#00CC83'>Noob</font> <font color='#B6250B'>Fizz</font><font color='#00B4D2'>Loaded</font>");
-            Game.PrintChat("<font color='#00B4D2'>Don't forget to upvote if you like NoobJax! </font>");
+            Game.PrintChat("<font color='#00B4D2'>Don't forget to upvote if you like NoobFizz! </font>");
         }
         private static void OnDoCast()
         {        
@@ -318,7 +318,7 @@ namespace NoobFizz
             }
             if (gapclose)
             {
-                if (useR) UseTr(target);
+                if (useR) R.CastIfWillHit(target);
                 if (useQ && Player.Distance(m.Position) > 175) Q.CastOnUnit(m);
                 if (useW && Player.Distance(m.Position) < Q.Range) W.Cast();
                 if (useE && !R.IsReady() && E.Instance.Name == "FizzJump" && Player.Distance(m.Position) < E.Range) E.Cast(Game.CursorPos);
