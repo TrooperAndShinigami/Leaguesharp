@@ -304,7 +304,7 @@ namespace NoobFizz
             {             
                 if (useQ && Player.Distance(m.Position) > 175) Q.CastOnUnit(m);
                 if (useW && (Player.Distance(m.Position) < 551)) W.Cast();
-                if (useR && m.HealthPercent > 30) R.CastOnUnit(m);
+                if (useR && m.HealthPercent > 30) R.CastIfWillHit(m);
                 if (hydra.IsOwned() && Player.Distance(m) < hydra.Range && hydra.IsReady() && !E.IsReady()) hydra.Cast();
                 if (tiamat.IsOwned() && Player.Distance(m) < tiamat.Range && tiamat.IsReady() && !E.IsReady()) tiamat.Cast();
             }
