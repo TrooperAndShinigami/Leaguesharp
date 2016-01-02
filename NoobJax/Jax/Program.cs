@@ -96,9 +96,19 @@ namespace NoobJax
             Game.OnUpdate += OnUpdate;
             Orbwalking.OnAttack += OnAa;
             Drawing.OnDraw += OnDraw;
+            Obj_AI_Base.OnProcessSpellCast += OnProcessSpellCast;
             Game.PrintChat("<font color='#00CC83'>Noob</font> <font color='#B6250B'>Jax Loaded </font>");
             Game.PrintChat("<font color='#00B4D2'>Don't forget to upvote if you like NoobJax! </font>");
         }
+
+        private static void OnProcessSpellCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            if (args.Target != null && args.Target.IsMe && args.SData.IsAutoAttack() && Menu.Item("JungleClearE").GetValue<bool>() && E.IsReady() && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && sender.Team == GameObjectTeam.Neutral)
+            {
+                E.Cast();
+            }
+        }
+
         private static void OnDoCast()
         {
             Obj_AI_Base.OnDoCast += (sender, args) =>
@@ -119,16 +129,16 @@ namespace NoobJax
                             //Jungle 
                             if (allJungleMinions.Count != 0)
                             {
-                                if (Menu.Item("JungleClearE").GetValue<bool>() && E.IsReady() && !IsEUsed)
-                                {
-                                    foreach (var minion in allJungleMinions)
-                                    {
-                                        if (minion.IsValidTarget())
-                                        {
-                                            E.Cast(minion);
-                                        }
-                                    }
-                                }
+                                //if (Menu.Item("JungleClearE").GetValue<bool>() && E.IsReady() && !IsEUsed)
+                                //{
+                                //    foreach (var minion in allJungleMinions)
+                                //    {
+                                //        if (minion.IsValidTarget())
+                                //        {
+                                //            E.Cast(minion);
+                                //        }
+                                //    }
+                                //}
                                 if (Menu.Item("JungleClearQ").GetValue<bool>() && Q.IsReady())
                                 {
                                     foreach (var minion in allJungleMinions)
