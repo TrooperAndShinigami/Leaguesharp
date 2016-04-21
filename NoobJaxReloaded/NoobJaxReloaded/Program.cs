@@ -42,7 +42,7 @@ namespace NoobJaxReloaded
                 return; // stop programm
 
             // Set Spells
-            Q = new Spell(SpellSlot.Q, 680);
+            Q = new Spell(SpellSlot.Q, 700);
             W = new Spell(SpellSlot.W, Orbwalking.GetRealAutoAttackRange(Player));
             E = new Spell(SpellSlot.E);
             R = new Spell(SpellSlot.R);
@@ -70,7 +70,6 @@ namespace NoobJaxReloaded
             Menu comboMenu = new Menu("Combo", "Combo");
             comboMenu.AddItem(new MenuItem("useQ", "Use Q").SetValue(true));
             comboMenu.AddItem(new MenuItem("useQ2", "Use Q when enemy is in AA Range").SetValue(false).SetTooltip("Turn this on to use Q when enemy is in AA range"));
-            comboMenu.AddItem(new MenuItem("qsetting", "Q range").SetValue(new Slider(680, 680)).SetTooltip("Don't change anything unless you want a shorter Q range usage"));
             comboMenu.AddItem(new MenuItem("useW", "Use W").SetValue(true));
             comboMenu.AddItem(new MenuItem("useR", "Use R").SetValue(true));
             comboMenu.AddItem(new MenuItem("space1", "E options"));
@@ -138,11 +137,10 @@ namespace NoobJaxReloaded
             Combo();
         }
 
-        private static void Combo()
+        private static void Combo(bool anyTarget = false)
         {
             if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Combo)
                 return;
-            Obj_AI_Hero targetQ = TargetSelector.GetTarget(_menu.Item("qsetting").GetValue<Slider>().Value, TargetSelector.DamageType.Physical);
             Obj_AI_Hero target = TargetSelector.GetTarget(700, TargetSelector.DamageType.Magical);
 
             // IITEMS
@@ -161,27 +159,40 @@ namespace NoobJaxReloaded
 
 
             // ACTUAL COMBO
-            if (targetQ != null && !targetQ.IsZombie)
+            if (target != null && !target.IsZombie)
             {
                 if (Q.IsReady() && _menu.Item("useQ").GetValue<bool>())
                 {
-                    if ((Player.Distance(targetQ.Position) > Orbwalking.GetRealAutoAttackRange(Player)) || _menu.Item("useQ2").GetValue<bool>())
+                    if ((Player.Distance(target.Position) > Orbwalking.GetRealAutoAttackRange(Player)) || _menu.Item("useQ2").GetValue<bool>())
                     {
-                        Q.CastOnUnit(targetQ);
+                        Q.CastOnUnit(target);
                     }
                 }
                 if (E.IsReady() && (_menu.Item("useE").GetValue<bool>()))
                 {
-                    if (!IsEUsed && Q.IsReady() && targetQ.IsValidTarget(Q.Range) || !IsEUsed && Player.Distance(targetQ.Position) < 250)
+                    if ((!IsEUsed && Q.IsReady() && target.IsValidTarget(Q.Range)) || (!IsEUsed && Player.Distance(target.Position) < 250))
                     {
                         E.Cast();
                     }
-                    if (_menu.Item("useE2").GetValue<bool>() && IsEUsed && (Player.Distance(targetQ.Position) > 50))
+                    if (_menu.Item("useE2").GetValue<bool>() && IsEUsed && (Player.Distance(target.Position) < 180))
                     {
                         E.Cast();
                     }
+                    /*if (anyTarget)
+                    {
+                        List<Obj_AI_Hero> enemies = Player.Position.GetEnemiesInRange(180);
+                        if (enemies.Count >= 3)
+                        {
+                            E.Cast();
+                            return;
+                        }
+                        if (enemies.Count == 1)
+                        {
+                            target = enemies.ElementAt(0);
+                        }
+                    }*/
                 }
-                if ((_menu.Item("useR").GetValue<bool>() && Q.IsReady()) || (_menu.Item("useR").GetValue<bool>() && !Q.IsReady() && Player.Distance(targetQ.Position) < 300)) R.Cast();
+                if ((_menu.Item("useR").GetValue<bool>() && Q.IsReady() && R.IsReady()) || (_menu.Item("useR").GetValue<bool>() && R.IsReady() && !Q.IsReady() && Player.Distance(target.Position) < 300)) R.Cast();
             }
         }
 
@@ -205,17 +216,7 @@ namespace NoobJaxReloaded
                             var allJungleMinions = MinionManager.GetMinions(Q.Range, MinionTypes.All,
                         MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
                             if (allJungleMinions.Count != 0)
-                            {
-                                /*if (_menu.Item("JungleClearE").GetValue<bool>() && E.IsReady() && !IsEUsed)
-                                {
-                                    foreach (var minion in allJungleMinions)
-                                    {
-                                        if (minion.IsValidTarget())
-                                        {
-                                            E.Cast(minion);
-                                        }
-                                    }
-                                }*/
+                            {                                
                                 if (_menu.Item("jungleclearQ").GetValue<bool>() && Q.IsReady())
                                 {
                                     foreach (var minion in allJungleMinions)
@@ -275,7 +276,7 @@ namespace NoobJaxReloaded
         {
             if (_menu.Item("drawsetQ").GetValue<bool>())
             {
-                Render.Circle.DrawCircle(Player.Position, _menu.Item("qsetting").GetValue<Slider>().Value,
+                Render.Circle.DrawCircle(Player.Position, Q.Range,
                     Color.Tan);
             }
             if (_menu.Item("drawAa").GetValue<bool>())
