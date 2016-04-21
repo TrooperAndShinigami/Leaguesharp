@@ -192,7 +192,12 @@ namespace NoobJaxReloaded
                         }
                     }*/
                 }
-                if ((_menu.Item("useR").GetValue<bool>() && Q.IsReady() && R.IsReady()) || (_menu.Item("useR").GetValue<bool>() && R.IsReady() && !Q.IsReady() && Player.Distance(target.Position) < 300)) R.Cast();
+                if (target.HealthPercent > 20)
+                {
+                    if ((_menu.Item("useR").GetValue<bool>() && Q.IsReady() && R.IsReady()) ||
+                        (_menu.Item("useR").GetValue<bool>() && R.IsReady() && !Q.IsReady() &&
+                         Player.Distance(target.Position) < 300)) R.Cast();
+                }
             }
         }
 
