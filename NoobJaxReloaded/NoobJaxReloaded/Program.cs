@@ -292,20 +292,19 @@ namespace NoobJaxReloaded
         }
         private static void Killsteal()
         {
-            Obj_AI_Hero qTarget = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
-            if (qTarget == null || qTarget.HasBuffOfType(BuffType.Invulnerability))
-                return;
+            foreach (Obj_AI_Hero enemy in AllEnemy)
             {
+                if (enemy == null || enemy.HasBuffOfType(BuffType.Invulnerability))
+                    return;
                 double damage = 0d;
-                damage = ObjectManager.Player.GetSpellDamage(qTarget, SpellSlot.Q);
+                damage = ObjectManager.Player.GetSpellDamage(enemy, SpellSlot.Q);
 
-                if (damage > qTarget.Health)
+                if (damage > enemy.Health)
                 {
-                    Q.Cast(qTarget);
+                    Q.Cast(enemy);
                 }
-            }
+            }        
         }
-
         private static void OnAa(AttackableUnit unit, AttackableUnit target)
         {
             Obj_AI_Hero y = TargetSelector.GetTarget(185, TargetSelector.DamageType.Physical);
